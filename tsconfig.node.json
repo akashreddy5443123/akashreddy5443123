@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Node.js mode */
+    "moduleResolution": "NodeNext", // Changed from "bundler"
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true, // Keep this, ts-node might need it
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts", "scripts/**/*.ts"] // Added scripts directory
+}
