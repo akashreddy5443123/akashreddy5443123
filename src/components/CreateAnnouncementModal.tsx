@@ -11,7 +11,7 @@ interface CreateAnnouncementModalProps {
 export function CreateAnnouncementModal({ isOpen, onClose }: CreateAnnouncementModalProps) {
   const { user } = useAuthStore();
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [message, setMessage] = useState(''); // Changed state name from content to message
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +21,8 @@ export function CreateAnnouncementModal({ isOpen, onClose }: CreateAnnouncementM
       setError("You don't have permission to create announcements.");
       return;
     }
-    if (!title.trim() || !content.trim()) {
-      setError("Title and content cannot be empty.");
+    if (!title.trim() || !message.trim()) { // Check message state
+      setError("Title and message cannot be empty.");
       return;
     }
 
@@ -34,7 +34,7 @@ export function CreateAnnouncementModal({ isOpen, onClose }: CreateAnnouncementM
         .from('announcements')
         .insert({
           title: title.trim(),
-          content: content.trim(),
+          message: message.trim(), // Use message column
           created_by: user.id // Set the creator
         });
 
@@ -42,7 +42,7 @@ export function CreateAnnouncementModal({ isOpen, onClose }: CreateAnnouncementM
 
       // Success
       setTitle('');
-      setContent('');
+      setMessage(''); // Reset message state
       onClose(); // Close modal and trigger refetch on parent
 
     } catch (err) {
@@ -56,7 +56,7 @@ export function CreateAnnouncementModal({ isOpen, onClose }: CreateAnnouncementM
   const handleClose = () => {
     // Reset state on close
     setTitle('');
-    setContent('');
+    setMessage(''); // Reset message state
     setError(null);
     setLoading(false);
     onClose();
@@ -100,14 +100,14 @@ export function CreateAnnouncementModal({ isOpen, onClose }: CreateAnnouncementM
           </div>
 
           <div>
-            <label htmlFor="announcement-content" className="block text-sm font-medium text-gray-700 mb-1">
-              Content
+            <label htmlFor="announcement-message" className="block text-sm font-medium text-gray-700 mb-1">
+              Message {/* Changed label */}
             </label>
             <textarea
-              id="announcement-content"
+              id="announcement-message" // Changed id
               rows={6}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              value={message} // Use message state
+              onChange={(e) => setMessage(e.target.value)} // Update message state
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
               placeholder="Details about the announcement..."
               required

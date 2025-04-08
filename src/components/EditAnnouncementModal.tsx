@@ -7,7 +7,7 @@ import { X } from 'lucide-react';
 interface Announcement {
   id: string;
   title: string;
-  content: string;
+  message: string; // Changed content to message
   created_at: string;
   created_by?: string;
 }
@@ -21,19 +21,19 @@ interface EditAnnouncementModalProps {
 export function EditAnnouncementModal({ isOpen, onClose, announcement }: EditAnnouncementModalProps) {
   const { user } = useAuthStore();
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [message, setMessage] = useState(''); // Changed state name
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Pre-fill form when announcement data changes (modal opens)
   useEffect(() => {
     if (announcement) {
-      setTitle(announcement.title);
-      setContent(announcement.content);
+      setTitle(announcement.title || '');
+      setMessage(announcement.message || ''); // Use message
     } else {
-      // Reset if no announcement is passed (e.g., modal closed then reopened without selection)
+      // Reset if no announcement is passed
       setTitle('');
-      setContent('');
+      setMessage(''); // Reset message
     }
   }, [announcement]);
 
@@ -48,8 +48,8 @@ export function EditAnnouncementModal({ isOpen, onClose, announcement }: EditAnn
       setError("You don't have permission to edit this announcement.");
       return;
     }
-    if (!title.trim() || !content.trim()) {
-      setError("Title and content cannot be empty.");
+    if (!title.trim() || !message.trim()) { // Check message
+      setError("Title and message cannot be empty.");
       return;
     }
 
@@ -61,7 +61,7 @@ export function EditAnnouncementModal({ isOpen, onClose, announcement }: EditAnn
         .from('announcements')
         .update({
           title: title.trim(),
-          content: content.trim(),
+          message: message.trim(), // Use message column
           // Optionally update an 'updated_at' timestamp if you have one
         })
         .eq('id', announcement.id); // Target the specific announcement
@@ -83,7 +83,7 @@ export function EditAnnouncementModal({ isOpen, onClose, announcement }: EditAnn
     // Reset state on close
     setError(null);
     setLoading(false);
-    // Don't reset title/content here, useEffect handles it based on `announcement` prop
+    // Don't reset title/message here, useEffect handles it based on `announcement` prop
     onClose();
   };
 
@@ -124,14 +124,14 @@ export function EditAnnouncementModal({ isOpen, onClose, announcement }: EditAnn
           </div>
 
           <div>
-            <label htmlFor="edit-announcement-content" className="block text-sm font-medium text-gray-700 mb-1">
-              Content
+            <label htmlFor="edit-announcement-message" className="block text-sm font-medium text-gray-700 mb-1">
+              Message {/* Changed label */}
             </label>
             <textarea
-              id="edit-announcement-content"
+              id="edit-announcement-message" // Changed id
               rows={6}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              value={message} // Use message state
+              onChange={(e) => setMessage(e.target.value)} // Update message state
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
               required
             />

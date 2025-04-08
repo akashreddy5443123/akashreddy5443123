@@ -21,7 +21,7 @@ interface SearchClub {
 interface SearchAnnouncement {
   id: string;
   title: string;
-  content: string;
+  message: string; // Changed content to message
   created_at: string;
 }
 
@@ -69,19 +69,25 @@ export function SearchPage() {
         if (clubsError) throw clubsError;
         setClubs(clubsData || []);
 
-        // Search Announcements (title or content)
+        // Search Announcements (title or message)
         const { data: announcementsData, error: announcementsError } = await supabase
           .from('announcements')
-          .select('id, title, content, created_at')
-          .or(`title.ilike.${searchTerm},content.ilike.${searchTerm}`)
+          .select('id, title, message, created_at') // Select message
+          .or(`title.ilike.${searchTerm},message.ilike.${searchTerm}`) // Search message
           .order('created_at', { ascending: false })
           .limit(10);
-        if (announcementsError) throw announcementsError;
-        setAnnouncements(announcementsData || []);
+        if (announcementsError) {
+          console.error("Announcements search error:", announcementsError);
+          // Optionally decide if one error should stop the whole search or just skip results
+          // For now, let's continue but log the error
+        } else {
+          setAnnouncements(announcementsData || []);
+        }
 
       } catch (err) {
-        console.error("Search error:", err);
-        setError(err instanceof Error ? err.message : 'Failed to perform search');
+        // This catch block might catch errors from any of the awaits above
+        console.error("Overall search error:", err); 
+        setError(err instanceof Error ? `Search failed: ${err.message}` : 'Failed to perform search');
       } finally {
         setLoading(false);
       }
@@ -156,7 +162,7 @@ export function SearchPage() {
                          <h3 className="font-medium text-lg text-indigo-600">{announcement.title}</h3>
                        </Link>
                        <p className="text-sm text-gray-500 mt-1">{new Date(announcement.created_at).toLocaleString()}</p>
-                       <p className="text-gray-700 mt-2 text-sm line-clamp-3">{announcement.content}</p>
+                       <p className="text-gray-700 mt-2 text-sm line-clamp-3">{announcement.message}</p> {/* Display message */}
                     </li>
                   ))}
                 </ul>

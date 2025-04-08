@@ -13,10 +13,11 @@
   }
 }
 
-/* Style for registered events in react-big-calendar */
-.rbc-event.registered-event {
-  background-color: #10b981; /* Tailwind green-500 */
-  border-color: #059669; /* Tailwind green-600 */
+/* Style for registered events in react-big-calendar - Max specificity */
+body .rbc-calendar .rbc-event.registered-event {
+  background-color: #10b981 !important; /* Tailwind green-500 with !important */
+  border-color: #059669 !important; /* Tailwind green-600 with !important */
+  color: white !important; /* Ensure text is readable */
 }
 /* Optional: Style for suggested events */
 .rbc-event.suggested-event {

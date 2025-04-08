@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom'; // Added useNavigate
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
-import { Mail, Globe, MapPin, Calendar, Users, ArrowLeft, Check, X, Pencil, Trash2 } from 'lucide-react';
-import { EditClubModal } from '../components/EditClubModal'; // Import EditClubModal
-// Assuming EventCard component exists and can be reused/adapted
-// import { EventCard } from '../components/EventCard';
+import { Mail, Globe, MapPin, Calendar, Users, ArrowLeft, Check, X, Pencil, Trash2 } from 'lucide-react'; // Users icon already imported
+import { EditClubModal } from '../components/EditClubModal';
 
 // Interfaces (can be refined or imported)
 interface Club {
@@ -18,8 +16,15 @@ interface Club {
   email: string;
   website: string;
   image_url: string;
-  created_by?: string;
+  created_by?: string; // User ID of the creator
 }
+
+// Interface for member display data
+interface MemberDisplayInfo {
+  user_id: string;
+  display_name: string; // Store the final name to display
+}
+
 
 interface Event {
   id: string;
@@ -37,15 +42,65 @@ export function ClubDetailPage() {
   const { user } = useAuthStore();
   const [club, setClub] = useState<Club | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
-  const [isMember, setIsMember] = useState(false);
+  const [isMember, setIsMember] = useState(false); // Keep only one declaration
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false); // For join/leave/delete
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State for edit modal
-  const navigate = useNavigate(); // Hook for navigation after delete
+  const [actionLoading, setActionLoading] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [members, setMembers] = useState<MemberDisplayInfo[]>([]); // Use new interface for state
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const navigate = useNavigate();
+
+  // Function to fetch members (memoized with useCallback) - Separate Queries Approach
+  const fetchMembers = useCallback(async (currentClubId: string) => {
+    setLoadingMembers(true);
+    setMembers([]); // Clear previous members
+    try {
+      // 1. Fetch member IDs from club_memberships
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('club_memberships')
+        .select('user_id')
+        .eq('club_id', currentClubId);
+
+      if (membershipError) throw membershipError;
+      if (!membershipData || membershipData.length === 0) {
+        setLoadingMembers(false);
+        return; // No members
+      }
+
+      const memberIds = membershipData.map(m => m.user_id);
+
+      // 2. Fetch profiles for those member IDs
+      // Assuming profiles.id references auth.users.id (which is stored in club_memberships.user_id)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name') // Select id and full_name
+        .in('id', memberIds); // Match profiles.id with the user_ids from memberships
+
+      if (profilesError) throw profilesError;
+
+      // 3. Create display info, falling back if profile or name is missing
+      const displayMembers = memberIds.map(userId => {
+        const profile = profilesData?.find(p => p.id === userId);
+        const fullName = profile?.full_name?.trim();
+        return {
+          user_id: userId,
+          display_name: fullName ? fullName : 'Club Member' // Fallback
+        };
+      });
+
+      setMembers(displayMembers);
+
+    } catch (err) {
+      console.error("Error fetching club members (separate queries):", err);
+      // Optionally set an error state for members
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, []); // Empty dependency array as it doesn't depend on component state directly
 
   // Define fetchClubData function inside component but outside useEffect
-  async function fetchClubData() {
+  const fetchClubData = useCallback(async () => {
     if (!clubId) {
       setError("Club ID not found.");
         setLoading(false);
@@ -98,28 +153,35 @@ export function ClubDetailPage() {
             .eq('club_id', clubId)
             .maybeSingle();
 
-          if (membershipError) throw membershipError;
           setIsMember(!!membershipData);
         } else {
           setIsMember(false);
         }
 
+        // After fetching club, check permissions and fetch members if allowed
+        if (clubData && user && (user.id === clubData.created_by || user.is_admin)) {
+          fetchMembers(clubId); // Fetch members for this club
+        } else {
+          setMembers([]); // Clear members if user doesn't have permission
+        }
+
       } catch (err) {
-        console.error("Error fetching club details:", err);
+        console.error("Error fetching club details/members:", err);
         setError(err instanceof Error ? err.message : 'Failed to load club details.');
         setClub(null);
         setEvents([]);
       } finally {
         setLoading(false);
       }
-    }
-  // Note: No closing brace here, fetchClubData is now part of the component scope
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubId, user, fetchMembers]); // Add fetchMembers to dependencies
 
   // Fetch club details, events, and membership status on mount or when relevant data changes
   useEffect(() => {
-    fetchClubData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clubId, user]); // Refetch if clubId or user changes
+    if (clubId) {
+        fetchClubData();
+    }
+  }, [clubId, user, fetchClubData]); // Use fetchClubData in dependency array
 
   // --- Action Handlers (Join, Leave, Delete) ---
   // TODO: Refactor these into a hook or service if used elsewhere
@@ -313,10 +375,31 @@ export function ClubDetailPage() {
         onClose={() => {
             setIsEditModalOpen(false);
             fetchClubData(); // Refetch data after closing modal
-        }} 
+        }}
       />
 
-      {/* Removed invalid <style jsx> block. Apply Tailwind classes directly to buttons. */}
+      {/* Members Section (Visible only to creator or admin) */}
+      {(user?.id === club.created_by || user?.is_admin) && (
+        <div className="mt-10 pt-8 border-t">
+          <h2 className="text-2xl font-bold mb-6 flex items-center">
+            <Users className="w-6 h-6 mr-3 text-indigo-600" /> Club Members ({members.length})
+          </h2>
+          {loadingMembers ? (
+            <p>Loading members...</p>
+          ) : members.length > 0 ? (
+            <ul className="space-y-3 list-disc list-inside bg-white/90 p-4 rounded-lg shadow-sm border">
+              {members.map((member) => (
+                // Use the pre-calculated display_name from the state
+                <li key={member.user_id} className="text-gray-800">
+                  {member.display_name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 bg-white/90 p-4 rounded-lg shadow-sm border">No members have joined this club yet.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

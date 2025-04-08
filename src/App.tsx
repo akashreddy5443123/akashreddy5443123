@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'; // Import useState, useEffect
 import { Routes, Route, Link, useNavigate } from 'react-router-dom'; // Import useNavigate
-import { Calendar, Users, Search, Bell, ChevronRight } from 'lucide-react'; // Removed MessageSquare
+import { Calendar, Users, Search, Bell, ChevronRight } from 'lucide-react';
 import { Header } from './components/Header';
-import { supabase } from './lib/supabase'; // Import supabase client
+import { Footer } from './components/Footer'; // Import Footer
+import { supabase } from './lib/supabase';
 import { useAuthStore } from './stores/authStore'; // Import auth store
 import { Events } from './pages/Events';
 import { Clubs } from './pages/Clubs';
@@ -11,13 +12,15 @@ import { UserDashboard } from './pages/UserDashboard';
 import { Announcements as AnnouncementsPage } from './pages/Announcements';
 import { SearchPage } from './pages/SearchPage';
 import { EventDetailPage } from './pages/EventDetailPage';
-import { ClubDetailPage } from './pages/ClubDetailPage'; // Import the club detail page
+import { ClubDetailPage } from './pages/ClubDetailPage';
+import { AdminDashboard } from './pages/AdminDashboard'; // Import AdminDashboard
+import { ProtectedRoute } from './components/ProtectedRoute'; // Import ProtectedRoute
 
 // Define Announcement type
 interface Announcement {
   id: string;
   title: string;
-  content: string;
+  message: string; // Changed content to message
   created_at: string;
 }
 
@@ -27,9 +30,9 @@ interface FeaturedEvent {
   title: string;
   date: string;
   image_url: string | null;
-  club: { 
+  club: {
     name: string;
-  }[] | null; 
+  }[] | null;
   category?: string; // Add category if needed for filtering
 }
 
@@ -52,7 +55,7 @@ function App() {
       try {
         const { data, error } = await supabase
           .from('announcements')
-          .select('*')
+          .select('id, title, message, created_at') // Select message instead of *
           .order('created_at', { ascending: false }) // Get latest first
           .limit(3); // Limit to 3 for the homepage preview
 
@@ -73,12 +76,12 @@ function App() {
       setLoadingFeaturedEvents(true);
       let fetchedEvents: FeaturedEvent[] = [];
       try {
-        const today = new Date().toISOString().split('T')[0]; 
+        const today = new Date().toISOString().split('T')[0];
         let userInterests: string[] | null = null;
 
         // 1. Check if user is logged in and fetch their interests (assuming 'interests' column exists)
         if (user?.id) {
-           // We need the full profile data including interests from the store, 
+           // We need the full profile data including interests from the store,
            // or fetch it here if not available in the store's 'user' object.
            // Assuming user object in store has interests:
            // userInterests = user.interests; // Replace 'interests' with your actual column name
@@ -108,14 +111,14 @@ function App() {
               title,
               date,
               image_url,
-              category, 
-              club:clubs ( name ) 
+              category,
+              club:clubs ( name )
             `)
             .gte('date', today)
             .in('category', userInterests) // Filter by interests matching category
             .order('date', { ascending: true })
             .limit(3);
-          
+
           if (error) throw error;
           if (data && data.length > 0) {
             fetchedEvents = data;
@@ -136,10 +139,10 @@ function App() {
               title,
               date,
               image_url,
-              club:clubs ( name ) 
+              club:clubs ( name )
             `)
-            .gte('date', today) 
-            .order('date', { ascending: true }) 
+            .gte('date', today)
+            .order('date', { ascending: true })
             .limit(3);
 
            if (error) throw error;
@@ -161,33 +164,6 @@ function App() {
   }, [user?.id]); // Change dependency from [user] to [user?.id]
 
 
-  // Remove the hardcoded featuredEvents array
-  /*
-  const featuredEvents = [
-    {
-      id: 1,
-      title: "Spring Tech Hackathon",
-      date: "March 15, 2024",
-      club: "Computer Science Society",
-      image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1000",
-    },
-    {
-      id: 2,
-      title: "Environmental Awareness Week",
-      date: "March 20, 2024",
-      club: "Green Earth Club",
-      image: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=1000",
-    },
-    {
-      id: 3,
-      title: "Cultural Festival",
-      date: "March 25, 2024",
-      club: "International Students Association",
-      image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&q=80&w=1000",
-    },
-  ];
-  */
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -197,9 +173,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[url('/background.jpg')] bg-cover bg-center">
-      <div className="min-h-screen bg-white/70"> {/* Changed from bg-white/95 to bg-white/70 for more visibility */}
+      {/* Added flex flex-col to ensure footer stays at bottom */}
+      <div className="min-h-screen bg-white/70 flex flex-col">
       <Header />
-      <Routes>
+      <main className="flex-grow"> {/* Added flex-grow to main content area */}
+        <Routes>
         <Route path="/" element={
           <>
             {/* Search Section */}
@@ -260,16 +238,18 @@ function App() {
                 ) : announcements.length > 0 ? (
                   <div className="space-y-6">
                     {announcements.map((announcement) => (
-                       // Added background opacity to announcement cards
-                      <div key={announcement.id} className="bg-white/90 p-6 rounded-lg shadow-md backdrop-blur-sm">
-                        <h3 className="text-lg font-semibold mb-2 text-indigo-700">{announcement.title}</h3>
-                        <p className="text-gray-600 text-sm mb-3">
-                          {new Date(announcement.created_at).toLocaleDateString()}
-                        </p>
-                        <p className="text-gray-800">{announcement.content}</p>
-                      </div>
+                      <React.Fragment key={announcement.id}> {/* Wrap in Fragment and move key */}
+                        {/* Added background opacity to announcement cards */}
+                        <div className="bg-white/90 p-6 rounded-lg shadow-md backdrop-blur-sm">
+                          <h3 className="text-lg font-semibold mb-2 text-indigo-700">{announcement.title}</h3>
+                          <p className="text-gray-600 text-sm mb-3">
+                            {new Date(announcement.created_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-gray-800">{announcement.message}</p> {/* Display message */}
+                        </div>
+                      </React.Fragment>
                     ))}
-                     {/* Link to view all announcements */}
+                    {/* Link to view all announcements */}
                      <div className="text-center mt-8">
                        <Link to="/announcements" className="text-indigo-600 font-medium hover:text-indigo-800">
                          View All Announcements &rarr;
@@ -291,19 +271,19 @@ function App() {
                 {featuredEvents.map((event) => (
                        // Added background opacity to event cards
                       <div key={event.id} className="bg-white/90 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 backdrop-blur-sm">
-                        <img 
+                        <img
                           src={event.image_url || 'https://via.placeholder.com/400x200?text=No+Image'} // Use placeholder if no image
-                          alt={event.title} 
-                          className="w-full h-48 object-cover" 
+                          alt={event.title}
+                          className="w-full h-48 object-cover"
                         />
                     <div className="p-6">
                           <h3 className="text-xl font-semibold mb-2 text-gray-900">{event.title}</h3>
                           <p className="text-gray-600 text-sm mb-1">{new Date(event.date).toLocaleDateString()}</p> {/* Format date */}
                           {/* Access club name from the first element of the array */}
-                          <p className="text-indigo-600 text-sm mb-4">{event.club?.[0]?.name || 'Campus Event'}</p> 
+                          <p className="text-indigo-600 text-sm mb-4">{event.club?.[0]?.name || 'Campus Event'}</p>
                       <Link
                             to={`/events/${event.id}`} // Link to specific event page (assuming route exists)
-                            className="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 block text-center transition-colors duration-300 text-sm font-medium" 
+                            className="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 block text-center transition-colors duration-300 text-sm font-medium"
                       >
                         Learn More
                       </Link>
@@ -324,9 +304,16 @@ function App() {
         <Route path="/clubs/:clubId" element={<ClubDetailPage />} /> {/* Add route for club detail */}
           <Route path="/announcements" element={<AnnouncementsPage />} /> {/* Add route for announcements */}
           <Route path="/search" element={<SearchPage />} /> {/* Add route for search results */}
-        <Route path="/events-and-clubs" element={<EventsAndClubs />} />
+          <Route path="/events-and-clubs" element={<EventsAndClubs />} />
           <Route path="/dashboard" element={<UserDashboard />} />
-      </Routes> 
+
+          {/* Admin Route */}
+          <Route element={<ProtectedRoute isAdminRoute={true} />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+        </Routes>
+      </main>
+      <Footer /> {/* Add Footer component here */}
       </div>
     </div>
   );

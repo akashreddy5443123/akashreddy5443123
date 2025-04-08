@@ -8,7 +8,7 @@ import { EditAnnouncementModal } from '../components/EditAnnouncementModal'; // 
 interface Announcement {
   id: string;
   title: string;
-  content: string;
+  message: string; // Changed content to message
   created_at: string;
   created_by?: string; // Add creator ID
 }
@@ -143,7 +143,7 @@ export function Announcements() {
                 <p className="text-sm text-gray-500 mb-3">
                   {new Date(announcement.created_at).toLocaleString()}
                 </p>
-                <p className="text-gray-800 whitespace-pre-wrap">{announcement.content}</p>
+                <p className="text-gray-800 whitespace-pre-wrap">{announcement.message}</p> {/* Display message */}
               </div>
             ))}
           </div>

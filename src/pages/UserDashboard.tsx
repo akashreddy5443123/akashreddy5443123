@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'; // Keep single correct impor
 import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
-import { X, Edit, Trash2, Pencil } from 'lucide-react'; // Import icons, Added Pencil
+import { X, Trash2, Pencil } from 'lucide-react'; // Removed Edit icon
 import { EditEventModal } from '../components/EditEventModal'; // Import modals
 import { EditClubModal } from '../components/EditClubModal';
 

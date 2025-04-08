@@ -16,6 +16,7 @@ This is a web application built with React, TypeScript, Vite, Tailwind CSS, and 
     *   **Creator/Admin Control:** Only the user who created an event/club/announcement or an admin can update or delete it.
     *   **Admin-Only Creation:** Only admins can create announcements.
 *   **Notifications:** A dropdown menu accessible via the bell icon in the header displays the 5 most recent announcements.
+*   **Footer:** Displays contact information, social media links, credits, and copyright details.
 
 ## Project Structure
 
@@ -25,7 +26,7 @@ This is a web application built with React, TypeScript, Vite, Tailwind CSS, and 
 ├── scripts/
 │   └── seed.cjs        # Node.js script to seed database (requires Service Role Key)
 ├── src/
-│   ├── components/     # Reusable React components (Header, Modals, Cards, Dropdowns, etc.)
+│   ├── components/     # Reusable React components (Header, Footer, Modals, Cards, Dropdowns, etc.)
 │   ├── lib/
 │   │   └── supabase.ts # Supabase client initialization
 │   ├── pages/          # Page-level components (Events, Clubs, Dashboard, EventDetail, etc.)
@@ -54,6 +55,7 @@ This is a web application built with React, TypeScript, Vite, Tailwind CSS, and 
 *   **`src/lib/supabase.ts`**: Initializes the Supabase client using credentials from `.env`.
 *   **`src/stores/authStore.ts`**: Manages user authentication state (user object including `is_admin`, loading status) and provides functions (`signIn`, `signUp`, `signOut`, `resetPassword`, `initializeAuth`) using Zustand.
 *   **`src/components/Header.tsx`**: Displays the site title and navigation. Conditionally shows Sign In/Sign Up buttons or the `ProfileDropdown`. Includes the notification bell dropdown fetching recent announcements.
+*   **`src/components/Footer.tsx`**: Displays contact information, social media links, credits, and copyright details at the bottom of the application.
 *   **`src/components/AuthModal.tsx`**: Handles user Sign In, Sign Up, and Password Reset flows. Interacts with `authStore`.
 *   **`src/pages/Events.tsx`**: Fetches events, displays them, handles registration/unregistration, and includes the "Create Event" button. Shows delete button based on creator/admin status.
 *   **`src/pages/EventDetailPage.tsx`**: Fetches and displays details for a single event based on the URL parameter. Handles registration/unregistration for the specific event.

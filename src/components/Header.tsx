@@ -113,9 +113,9 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="text-2xl font-bold text-indigo-600">
-              Campus Connect
+              Campus Connect {/* Reverted text and removed logo img tag */}
             </Link>
-            <div className="flex items-center space-x-4 relative"> {/* Added relative positioning */}
+            <div className="flex items-center space-x-4 relative">
               {/* Notifications Bell & Dropdown */}
               <div ref={notificationsRef}> {/* Wrap bell and dropdown */}
                 <button

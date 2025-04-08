@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LogOut, User, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom'; // Import Link
+import { LogOut, User, Settings, LayoutDashboard } from 'lucide-react'; // Add LayoutDashboard
 import { useAuthStore } from '../stores/authStore';
 import { EditProfileModal } from './EditProfileModal';
 
@@ -53,6 +54,18 @@ export function ProfileDropdown() {
             <Settings className="w-4 h-4 inline-block mr-2" />
             Edit Profile
           </button>
+
+          {/* Conditionally render Admin Dashboard link */}
+          {user?.is_admin && (
+            <Link
+              to="/admin"
+              onClick={() => setIsOpen(false)} // Close dropdown on click
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <LayoutDashboard className="w-4 h-4 inline-block mr-2" />
+              Admin Dashboard
+            </Link>
+          )}
           
           <button
             onClick={async () => {
